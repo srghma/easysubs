@@ -1,6 +1,6 @@
-import { createStore, createEvent, createEffect, type UnitValue, type StoreValue } from "effector";
+import { createStore, createEvent, createEffect, type UnitValue, type StoreValue, combine } from "effector";
 
-import { convertRawSubs } from "@src/utils/convertRawSubs";
+import { convertRawSubs, splitUsingIntl } from "@src/utils/convertRawSubs";
 import type { $video } from "@src/models/videos";
 import { getCurrentSubs } from "@src/utils/getCurrentSubs";
 import type { TSub } from "../types";
@@ -11,8 +11,12 @@ import { resyncSync } from "@root/src/utils/resyncNode";
 
 export const ES_CUSTOM_SUB_LABEL = "custom";
 export const $rawSubs = createStore<NodeList>([]);
-export const $subs = $rawSubs.map((subtitle) => convertRawSubs(subtitle));
+export const $subs_butWordsAreUnsplitUsingIntlSegmenter = $rawSubs.map((subtitle) => convertRawSubs(subtitle));
 export const $subsLanguage = createStore<string>("auto");
+export const $subs = combine($subs_butWordsAreUnsplitUsingIntlSegmenter, $subsLanguage, (subs, language) =>
+  splitUsingIntl(subs, language),
+);
+
 export const $subsTitle = createStore<string | null>(null);
 export const $currentSubs = createStore<TSub[]>([]);
 export const $prevCurrentSubs = createStore<TSub[]>([]);
@@ -25,8 +29,8 @@ export const autoPauseFx = createEffect<
   },
   void
 >(({ video }) => {
-  if (!video) throw new Error('autoPauseFx failed: video nullish')
-  video.pause()
+  if (!video) throw new Error("autoPauseFx failed: video nullish");
+  video.pause();
 });
 
 export const subsRequested = createEvent<string>();
